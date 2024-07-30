@@ -3,6 +3,7 @@ package com.ggar.vapersgalore.ui.home;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +21,7 @@ import com.ggar.vapersgalore.service.ComputeService;
 import com.ggar.vapersgalore.service.ComputeServiceImpl;
 
 import java.util.List;
+import java.util.Objects;
 
 public class HomeFragment extends Fragment {
 
@@ -37,23 +39,62 @@ public class HomeFragment extends Fragment {
         final TextView textView = binding.textHome;
         homeViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
 
-//        final List<CheckBox> checkBoxList = List.of(binding.checkBox0, binding.checkBox1, binding.checkBox2, binding.checkBox3);
-        final List<EditText> editTextList = List.of(binding.value0, binding.value1, binding.value2, binding.value3);
+        binding.value0.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
 
-        binding.button.setOnClickListener(listener -> {
-            ValidateSelectionResult validateSelectionResult = validateSelection();
-            Double power = this.computeService.power(ElectricCircuitDefinition.builder()
-                    .voltage(Double.valueOf(editTextList.get(0).getText().toString()))
-                    .resistance(Double.valueOf(editTextList.get(2).getText().toString()))
-                    .build()
-            );
-            Double current = this.computeService.current(ElectricCircuitDefinition.builder()
-                .voltage(Double.valueOf(editTextList.get(0).getText().toString()))
-                .resistance(Double.valueOf(editTextList.get(2).getText().toString()))
-                .build()
-            );
-            editTextList.get(1).setText(String.format("%s", power));
-            editTextList.get(3).setText(String.format("%s", current));
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                try {
+                    String resistance = binding.value2.getText().length() > 0 ? binding.value2.getText().toString() : "0";
+                    resistance = resistance.equals(".") ? "0." : resistance;
+                    String voltage = s.toString().trim();
+                    voltage = voltage.isEmpty() ? "0" : voltage;
+                    voltage = voltage.equals(".") ? "0." : voltage;
+                    ElectricCircuitDefinition electricCircuitDefinition = ElectricCircuitDefinition.builder()
+                        .voltage(Double.valueOf(voltage))
+                        .resistance(Double.valueOf(resistance))
+                        .build();
+                    binding.value1.setText(String.format("%s", computeService.power(electricCircuitDefinition)));
+                    binding.value3.setText(String.format("%s", computeService.current(electricCircuitDefinition)));
+                } catch (Exception exception) {
+                    binding.textHome.setText(exception.getMessage());
+                    Log.d("COMPUTE", Objects.requireNonNull(exception.getMessage()));
+                    throw new RuntimeException(exception);
+                }
+            }
+        });
+
+        binding.value2.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {}
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                try {
+                    String voltage = binding.value0.getText().length() > 0 ? binding.value0.getText().toString() : "0";
+                    voltage = voltage.equals(".") ? "0." : voltage;
+                    String resistance = s.toString().trim();
+                    resistance = resistance.isEmpty() ? "0" : resistance;
+                    resistance = resistance.equals(".") ? "0." : resistance;
+                    ElectricCircuitDefinition electricCircuitDefinition = ElectricCircuitDefinition.builder()
+                            .voltage(Double.valueOf(voltage))
+                            .resistance(Double.valueOf(resistance))
+                            .build();
+                    binding.value1.setText(String.format("%s", computeService.power(electricCircuitDefinition)));
+                    binding.value3.setText(String.format("%s", computeService.current(electricCircuitDefinition)));
+                } catch (Exception exception) {
+                    binding.textHome.setText(exception.getMessage());
+                    Log.d("COMPUTE", Objects.requireNonNull(exception.getMessage()));
+                    throw new RuntimeException(exception);
+                }
+            }
         });
 
         return root;
